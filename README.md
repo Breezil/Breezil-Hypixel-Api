@@ -285,8 +285,7 @@ send envelope timestamps come back as `Timestamped<...>`.
 
 > Parsed raw types (`HypixelPlayer`, `Guild`, `SkyBlockProfile`, and the rest) are defined and
 > documented in [`@breezil/hypixel-parsers`](https://breezil.github.io/Breezil-Hypixel-Parsers/)
-> and re-exported from this package. Static reference data (prestige tables, cosmetics, maps)
-> lives in the optional [`@breezil/hypixel-utils`](https://github.com/Breezil/Breezil-Hypixel-Utils).
+> and re-exported from this package.
 
 ## Project Structure
 

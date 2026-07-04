@@ -25,7 +25,7 @@ extracted with `pickArray`, parsed with `parseBoosters`, enriched with `enrichBo
 and the sibling `boosterState` object is parsed with `parseBoosterState`.
 
 Each element of `boosters` is the parser's `Booster` type (see the
-[parsers docs](https://breezil.github.io/Breezil-Hypixel-Parsers/)) plus a `.computed`
+[network raw types](/api/raw/static-housing)) plus a `.computed`
 block of type `BoosterComputed` (see the [network computed page](/api/computed/network)).
 
 **Null semantics:** `null` when the request fails or the envelope's `boosters` key is
@@ -78,7 +78,7 @@ The whole envelope is parsed with `parseGameCounts` and enriched with `enrichGam
 `EnrichedGameCounts` is the parser's `GameCounts` type plus a `.computed` block of type
 `GameCountsComputed` (see the [network computed page](/api/computed/network)). The
 underlying fields are documented in the
-[parsers docs](https://breezil.github.io/Breezil-Hypixel-Parsers/).
+[network raw types](/api/raw/static-housing).
 
 **Null semantics:** `null` only when the request itself fails; the parser receives the full
 envelope, so there is no extraction step that can miss.
@@ -110,7 +110,7 @@ Each `EnrichedLeaderboard` is the parser's `Leaderboard` type plus its own `.com
 block (`LeaderboardComputed`), and the top-level `.computed` block aggregates across all
 boards. Both computed shapes are documented on the
 [network computed page](/api/computed/network); the raw leaderboard fields are in the
-[parsers docs](https://breezil.github.io/Breezil-Hypixel-Parsers/).
+[network raw types](/api/raw/static-housing).
 
 **Null semantics:** `null` only when the request itself fails.
 

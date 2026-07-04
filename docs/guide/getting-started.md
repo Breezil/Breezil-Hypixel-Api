@@ -39,10 +39,8 @@ Bordic, which needs its own key:
 
 Everything except `ping()` works without an Aurora key.
 
-The raw parsed types live in [`@breezil/hypixel-parsers`](https://breezil.github.io/Breezil-Hypixel-Parsers/),
-which is re-exported here. If you also want static reference data (teams, prestiges, ranks, maps,
-and render helpers), that is a separate, optional package,
-[`@breezil/hypixel-utils`](https://github.com/Breezil/Breezil-Hypixel-Utils), which you install on its own.
+The raw parsed types live in [`@breezil/hypixel-parsers`](/api/raw/),
+which is re-exported here.
 
 ## Quick Start
 

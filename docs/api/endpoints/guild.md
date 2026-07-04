@@ -21,7 +21,7 @@ Every method:
 **Returns:** `EnrichedGuild | null`
 
 `EnrichedGuild` is the parser's `Guild` type (see the
-[parsers docs](https://breezil.github.io/Breezil-Hypixel-Parsers/)) with a `.computed`
+[Guild raw type](/api/raw/guild-status)) with a `.computed`
 block of type `GuildComputed` attached (guild level and other derived values, documented on
 the [guild computed page](/api/computed/guild)).
 
