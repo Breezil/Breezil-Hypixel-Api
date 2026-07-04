@@ -2,7 +2,7 @@
 
 The package exports one client class, `HypixelApiService` (aliased as `HypixelClient`), a
 provider-based identity layer, an always-on computed enrichment layer, and every raw parser
-type from [`@breezil/hypixel-parsers`](https://breezil.github.io/Breezil-Hypixel-Parsers/)
+type from [`@breezil/hypixel-parsers`](/api/raw/)
 (re-exported). All endpoint methods are `async` and return `null` rather than throwing when
 there is no API key, the target is unknown, or the upstream call fails.
 
@@ -65,6 +65,6 @@ const hypixel = new HypixelClient("YOUR-API-KEY");
 | any v2 path                       | `request<T>(endpoint)`               | success-checked raw body                                         |
 
 Raw parser types (`HypixelPlayer`, `Guild`, `SkyBlockProfile`, `HousingHouse`, and the rest)
-are documented on the [parsers docs site](https://breezil.github.io/Breezil-Hypixel-Parsers/)
+are documented on the [raw type reference](/api/raw/)
 and re-exported from this package.
 

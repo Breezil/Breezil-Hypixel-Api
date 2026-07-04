@@ -39,7 +39,7 @@ get(idOrName: string): Promise<EnrichedPlayer | null>
 **Returns:** `EnrichedPlayer | null`
 
 `EnrichedPlayer` is the parser's `HypixelPlayer` (see the
-[parsers docs](https://breezil.github.io/Breezil-Hypixel-Parsers/)) with two changes:
+[player raw type](/api/raw/player)) with two changes:
 
 - a top-level `.computed` block of type `PlayerComputed` (network level, ranks, and other
   derived values, documented on the [player computed page](/api/computed/player))
@@ -96,7 +96,7 @@ status(idOrName: string): Promise<PlayerStatus | null>
 **Returns:** `PlayerStatus | null`
 
 `PlayerStatus` is a raw parser type from `@breezil/hypixel-parsers` with no `.computed`
-block. See the [parsers docs](https://breezil.github.io/Breezil-Hypixel-Parsers/) for its
+block. See the [status raw type](/api/raw/guild-status) for its
 fields. The `session` object is extracted from the envelope before parsing with
 `parseStatus`.
 

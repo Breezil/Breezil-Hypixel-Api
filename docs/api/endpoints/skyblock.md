@@ -12,7 +12,7 @@ All methods are `async` and return `null` instead of throwing when the request f
 
 Enriched results carry a `.computed` block; see the
 [SkyBlock computed pages](/api/computed/skyblock). Raw parser types are documented in the
-[parsers docs](https://breezil.github.io/Breezil-Hypixel-Parsers/). `Timestamped<T>` is
+[SkyBlock raw pages](/api/raw/skyblock/profile). `Timestamped<T>` is
 documented on the [network endpoints page](/api/endpoints/network#timestamped-t).
 
 ## Identifier resolution

@@ -7,7 +7,7 @@ by a player. It is defined in `src/endpoints/housing-endpoints.ts` and extends
 
 All methods return raw parser types from `@breezil/hypixel-parsers`; there is no housing
 enrichment, so no result carries a `.computed` block. `HousingHouse` and its fields are
-documented in the [parsers docs](https://breezil.github.io/Breezil-Hypixel-Parsers/).
+documented in the [housing raw types](/api/raw/static-housing).
 
 All methods are `async` and return `null` instead of throwing when the request fails
 (no API key, rate limited, upstream error) or the payload has an unexpected shape.

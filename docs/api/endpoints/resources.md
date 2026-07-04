@@ -8,7 +8,7 @@ definitions. It is defined in `src/endpoints/resource-endpoints.ts` and extends 
 Resource endpoints return static definition data, not player data. None of the results
 carry a `.computed` block; every payload is a raw parser type from
 `@breezil/hypixel-parsers`, documented in the
-[parsers docs](https://breezil.github.io/Breezil-Hypixel-Parsers/).
+[resources raw types](/api/raw/resources).
 
 Most methods return `Timestamped<T>` (defined in `src/endpoints/envelope.ts` and documented
 on the [network endpoints page](/api/endpoints/network#timestamped-t)): the parsed payload
