@@ -27,7 +27,7 @@ jobs:
           enablement: true
       # VitePress is fetched in isolation so unpublished workspace deps never block the docs build.
       - run: npx -y vitepress@^1 build docs
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: docs/.vitepress/dist
 
