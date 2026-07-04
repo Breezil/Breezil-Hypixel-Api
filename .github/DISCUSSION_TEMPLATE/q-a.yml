@@ -1,0 +1,29 @@
+# ───────────────────────────────────────────────────────────────────
+#  BREEZIL - Q&A discussion form
+#  Path in each repo:  .github/DISCUSSION_TEMPLATE/q-a.yml
+#  File name must match the category slug ("q-a").
+# ───────────────────────────────────────────────────────────────────
+title: "[Question]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Stuck on something? Ask away. Please search first, someone may have already answered it.
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      placeholder: What are you trying to do, and where are you stuck?
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you tried?
+      placeholder: Steps, commands, or links to what you have already attempted.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: "e.g. v1.2.0"
+

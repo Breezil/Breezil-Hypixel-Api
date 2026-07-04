@@ -1,0 +1,28 @@
+# ───────────────────────────────────────────────────────────────────
+#  BREEZIL - Show and tell discussion form
+#  Path in each repo:  .github/DISCUSSION_TEMPLATE/show-and-tell.yml
+# ───────────────────────────────────────────────────────────────────
+title: "[Show and tell]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Built something with @breezil/hypixel-api? Show it off. We love seeing what people make. 🎉
+  - type: textarea
+    id: what
+    attributes:
+      label: What did you make?
+      placeholder: Describe your project, mod, or setup.
+    validations:
+      required: true
+  - type: input
+    id: link
+    attributes:
+      label: Link
+      placeholder: Repo, video, screenshot, or live demo.
+  - type: input
+    id: built-with
+    attributes:
+      label: What did you build with @breezil/hypixel-api?
+      placeholder: "e.g. a stats overlay, a Discord bot, a guild dashboard"
+

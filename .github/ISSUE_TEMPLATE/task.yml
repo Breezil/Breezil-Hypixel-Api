@@ -1,0 +1,64 @@
+# ───────────────────────────────────────────────────────────────────
+#  BREEZIL - Task issue form (internal work items / project board cards)
+#  Path in each repo:  .github/ISSUE_TEMPLATE/task.yml
+# ───────────────────────────────────────────────────────────────────
+name: 📋 Task
+description: A unit of planned work for the team or the project board.
+title: "[Task]: "
+labels: ["needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for planned work and board cards, not bug reports or feature requests. Keep it crisp and outcome focused.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is the work, in one or two sentences?
+      placeholder: Add typed packet definitions for ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type of work
+      options:
+        - Feature
+        - Bug fix
+        - Docs
+        - Chore
+        - Refactor
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Break the work into a checklist.
+      placeholder: |
+        - [ ] First piece
+        - [ ] Second piece
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How do we know it is done?
+      placeholder: |
+        - Builds green
+        - Types exported
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      placeholder: Links, related issues, docs.
+

@@ -1,0 +1,17 @@
+# ───────────────────────────────────────────────────────────────────
+#  BREEZIL - Issue template chooser config
+#  Path in each repo:  .github/ISSUE_TEMPLATE/config.yml
+#  Turns off blank issues and points people to the right places.
+# ───────────────────────────────────────────────────────────────────
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discord community
+    url: https://discord.gg/7SxbNMYQNa
+    about: Questions, help, and general chat happen fastest here.
+  - name: 🗣️ GitHub Discussions
+    url: https://github.com/orgs/Breezil/discussions
+    about: Ideas, Q&A, and show-and-tell for the whole org.
+  - name: 🔒 Report a security issue
+    url: https://github.com/Breezil/Breezil-Hypixel-Api/security/advisories/new
+    about: Please report vulnerabilities privately, not as a public issue.
+

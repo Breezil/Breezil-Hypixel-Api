@@ -1,0 +1,24 @@
+# ───────────────────────────────────────────────────────────────────
+#  BREEZIL - Ideas discussion form
+#  Path in each repo:  .github/DISCUSSION_TEMPLATE/ideas.yml
+#  Per-repo discussions already know the repo, so no project field.
+# ───────────────────────────────────────────────────────────────────
+title: "[Idea]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a rough idea that is not a formal feature request yet? Float it here. 💡
+  - type: textarea
+    id: idea
+    attributes:
+      label: What's the idea?
+      placeholder: Describe it in plain language. Half-formed is fine.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would it solve?
+      placeholder: Who is this for, and what does it make easier?
+
