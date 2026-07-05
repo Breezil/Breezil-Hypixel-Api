@@ -41,7 +41,7 @@
     "@breezil/hypixel-parsers": "^1.2.0"
   },
   "devDependencies": {
-    "@types/node": "^20.19.43",
+    "@types/node": "^26.1.0",
     "typescript": "^5.3.0",
     "vitepress": "^1.6.3"
   },
