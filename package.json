@@ -1,6 +1,6 @@
 {
   "name": "@breezil/hypixel-api",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Typed Hypixel API client: fetch, TTL cache, rate-limit and cooldown handling, always-on computed stats, and injected config + UUID resolver so it runs standalone or embedded.",
   "keywords": [
     "breezil",
