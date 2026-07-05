@@ -37,6 +37,7 @@ export class HypixelApiService {
   public request<T = Record<string, unknown>>(
     endpoint: string,
   ): Promise<T | null>;
+  public keys(): KeyDiagnostics[];
   public clearCache(): void;
 }
 ```
@@ -174,6 +175,30 @@ public request<T = Record<string, unknown>>(endpoint: string): Promise<T | null>
 
 Escape hatch for any Hypixel endpoint not covered by a group. `endpoint` is appended to `https://api.hypixel.net/v2` verbatim (include the leading `/` and any query string; the endpoint string is also the cache key). Sends the `API-Key` header, applies caching, the rate-limit gate, concurrency limiting, and retries, then returns the whole response body. Returns `null` when the API key is empty, the request ultimately fails, or the body has `success: false`.
 
+### keys
+
+```ts
+public keys(): KeyDiagnostics[];
+```
+
+Returns an array of per-key diagnostics for every Hypixel API key currently configured, one `KeyDiagnostics` entry per key. This reflects live config state: it syncs the internal key pool with the current config source before collecting diagnostics, so hot-swapped keys appear immediately.
+
+```ts
+export interface KeyDiagnostics {
+  readonly key: string;
+  readonly remaining: number | null;
+  readonly limit: number | null;
+  readonly resetAt: number | null;
+}
+```
+
+| Field       | Type             | Description                                                                 |
+| ----------- | ---------------- | --------------------------------------------------------------------------- |
+| `key`       | `string`         | The API key this diagnostic entry applies to                                |
+| `remaining` | `number \| null` | Requests left in the current window, or `null` before the first response    |
+| `limit`     | `number \| null` | Total requests per window from the last `ratelimit-limit` header, or `null` |
+| `resetAt`   | `number \| null` | Millisecond timestamp when the window resets (from `now()`), or `null`      |
+
 ### clearCache
 
 ```ts
@@ -188,8 +213,8 @@ All requests made through the client share one pipeline with these fixed charact
 
 - **Response cache**: single-flight LRU cache, at most **1000 entries**, TTL of `cacheTtlSeconds` (default **300 s**). Concurrent requests for the same endpoint share one in-flight fetch. `null` results are not cached, so failures are retried on the next call.
 - **Concurrency**: a semaphore caps in-flight HTTP requests at **16** across the whole client.
-- **Rate-limit gate** (Hypixel requests only): tracks the `ratelimit-limit`, `ratelimit-remaining`, and `ratelimit-reset` response headers (with `x-` prefixed fallbacks) and blocks new Hypixel requests once the remaining budget hits 0, sleeping until the reset time plus 10 ms of slack (or 1000 ms when no reset time is known).
-- **Retries**: each fetch is attempted up to **4 times**. A per-attempt deadline of **5000 ms** applies to both the fetch and the body read; timeouts and network errors count as retryable. On HTTP 429, the gate is penalized (remaining set to 0, reset from `ratelimit-reset` or `retry-after`, else a 5000 ms default) and the request retries, except when the 429 body's `cause` contains "too recently" (a per-player cooldown), which returns `null` immediately. Any other non-OK status returns `null` without retrying.
+- **Rate-limit gate** (Hypixel requests only): each API key gets its own budget tracker from the `ratelimit-limit`, `ratelimit-remaining`, and `ratelimit-reset` response headers (with `x-` prefixed fallbacks). When multiple keys are configured, requests round-robin across them and each key's budget is tracked independently. When one key hits budget 0, its gate blocks until the reset time; the pipeline picks the next key automatically. Single-key configs behave exactly as before.
+- **Retries**: each fetch is attempted up to **4 times**. A per-attempt deadline of **5000 ms** applies to both the fetch and the body read. On HTTP 429, the key's gate is penalized (remaining set to 0, reset from `ratelimit-reset` or `retry-after`, else a 5000 ms default) and the next attempt picks the next key in rotation, except when the 429 body's `cause` contains "too recently" (a per-player cooldown), which returns `null` immediately without retrying. On timeout, the pipeline rotates to the next key; two consecutive timeouts return `null` (the issue is network-wide, not key-specific). Any other non-OK status returns `null` without retrying.
 
 ## IdentityApi
 
@@ -211,17 +236,17 @@ Object form of the configuration.
 
 ```ts
 export interface HypixelApiConfig {
-  apiKey: string;
-  pingApiKey?: string;
+  apiKey: string | string[];
+  pingApiKey?: string | string[];
   cacheTtlSeconds?: number;
 }
 ```
 
-| Option            | Type     | Default  | Description                                                                                                                                                                                                                                                                                               |
-| ----------------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apiKey`          | `string` | required | Hypixel API key, sent as the `API-Key` header. Get one at the [Hypixel Developer Dashboard](https://developer.hypixel.net/) (see [Getting your keys](/guide/getting-started#getting-your-keys)). When empty (after `trim()`), Hypixel requests short-circuit to `null` and `hasApiKey()` returns `false`. |
-| `pingApiKey`      | `string` | `""`     | Key for the external Aurora ping service by Bordic. When empty, `ping()` returns `null` without making a request. Get one by adding the [Vega Discord bot](https://discord.com/oauth2/authorize?client_id=1244205279697174539) and running `/api view` (copy the bare Aurora key, not the Cubelify URL).  |
-| `cacheTtlSeconds` | `number` | `300`    | Success TTL of the shared response cache, in seconds. Applies to all Hypixel and ping responses.                                                                                                                                                                                                          |
+| Option            | Type                 | Default  | Description                                                                                                                                                                                                                                                                                                                                                                                            |
+| ----------------- | -------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apiKey`          | `string \| string[]` | required | Hypixel API key(s). A single string works exactly as before. An array enables round-robin with per-key rate-limit tracking -- when one key is exhausted (HTTP 429), the next request automatically picks the next key. Empty entries in an array are silently dropped. Without any key, endpoint methods return `null`. Get keys at the [Hypixel Developer Dashboard](https://developer.hypixel.net/). |
+| `pingApiKey`      | `string \| string[]` | `""`     | Key(s) for the external Aurora ping service by Bordic. When empty, `ping()` returns `null`. Multiple keys are distributed round-robin across calls (no rate-limit gate, since Aurora returns no rate-limit headers). Get one by adding the [Vega Discord bot](https://discord.com/oauth2/authorize?client_id=1244205279697174539) and running `/api view`.                                             |
+| `cacheTtlSeconds` | `number`             | `300`    | Success TTL of the shared response cache, in seconds. Applies to all Hypixel and ping responses.                                                                                                                                                                                                                                                                                                       |
 
 ## HypixelApiConfigInput
 
@@ -244,8 +269,8 @@ The fully-resolved, function-shaped configuration the pipeline consumes. `toConf
 
 ```ts
 export type HypixelApiConfigSource = () => {
-  apiKey: string;
-  pingApiKey: string;
+  apiKey: string | string[];
+  pingApiKey: string | string[];
   cacheTtlSeconds: number;
 };
 ```
@@ -254,5 +279,5 @@ The pipeline invokes the source at request time for the API key and cache TTL, a
 
 ## Exports documented
 
-`HypixelApiService` (alias `HypixelClient`), `IdentityApi`, `BoosterFeed`, `Timestamped`, `HypixelApiConfig`, `HypixelApiConfigInput`, `HypixelApiConfigSource`.
+`HypixelApiService` (alias `HypixelClient`), `IdentityApi`, `BoosterFeed`, `Timestamped`, `KeyDiagnostics`, `HypixelApiConfig`, `HypixelApiConfigInput`, `HypixelApiConfigSource`.
 

@@ -5,6 +5,7 @@ import { NetworkEndpoints } from "./endpoints/network-endpoints";
 import { PlayerEndpoints } from "./endpoints/player-endpoints";
 import { GuildEndpoints } from "./endpoints/guild-endpoints";
 import { RequestPipeline } from "./http/request-pipeline";
+import type { KeyDiagnostics } from "./http/key-pool";
 import { PingService } from "./ping";
 import {
   createMojangResolver,
@@ -69,6 +70,10 @@ export class HypixelApiService {
     endpoint: string,
   ): Promise<T | null> {
     return this.pipeline.request<T>(endpoint);
+  }
+
+  public keys(): KeyDiagnostics[] {
+    return this.pipeline.keyDiagnostics();
   }
 
   public clearCache(): void {

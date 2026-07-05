@@ -1,6 +1,7 @@
+import { parseKeyList, type HypixelApiConfigSource } from "../config";
 import type { ExternalRequester, HttpRequester } from "./requester";
 import { SingleFlightCache } from "../cache/single-flight-cache";
-import type { HypixelApiConfigSource } from "../config";
+import { KeyPool, type KeyDiagnostics } from "./key-pool";
 import { RateLimitGate } from "./rate-limit-gate";
 import { Semaphore } from "./semaphore";
 import { sleep } from "./sleep";
@@ -13,38 +14,35 @@ const FETCH_TIMEOUT_MS = 5000;
 
 type FetchOutcome<T> =
   | { readonly done: true; readonly value: T | null }
-  | { readonly done: false };
+  | { readonly done: false; readonly gatePenalized: boolean };
 
 export class RequestPipeline implements HttpRequester, ExternalRequester {
   private readonly cache: SingleFlightCache;
   private readonly limiter = new Semaphore(MAX_CONCURRENT_REQUESTS);
-  private readonly gate: RateLimitGate;
+  private readonly keyPool: KeyPool;
 
   constructor(
     private readonly getConfig: HypixelApiConfigSource,
     now: () => number = () => Date.now(),
   ) {
     this.cache = new SingleFlightCache(now, MAX_CACHE_ENTRIES);
-    this.gate = new RateLimitGate(now);
+    this.keyPool = new KeyPool(now);
   }
 
   public hasApiKey(): boolean {
-    return this.getConfig().apiKey.trim().length > 0;
+    const keys = parseKeyList(this.getConfig().apiKey);
+    return keys.length > 0;
   }
 
   public async request<T = Record<string, unknown>>(
     endpoint: string,
   ): Promise<T | null> {
-    const key = this.getConfig().apiKey.trim();
-    if (key.length === 0) {
+    const keys = parseKeyList(this.getConfig().apiKey);
+    if (keys.length === 0) {
       return null;
     }
     const body = await this.cached<Record<string, unknown>>(endpoint, () =>
-      this.fetchJson(
-        `${HYPIXEL_BASE_URL}${endpoint}`,
-        { headers: { "API-Key": key } },
-        this.gate,
-      ),
+      this.fetchJson(`${HYPIXEL_BASE_URL}${endpoint}`, keys),
     );
     if (body === null || body.success === false) {
       return null;
@@ -60,6 +58,14 @@ export class RequestPipeline implements HttpRequester, ExternalRequester {
     this.cache.clear();
   }
 
+  public keyDiagnostics(): KeyDiagnostics[] {
+    const keys = parseKeyList(this.getConfig().apiKey);
+    if (keys.length > 0) {
+      this.keyPool.select(keys);
+    }
+    return this.keyPool.diagnostics();
+  }
+
   private cached<T>(
     key: string,
     fetcher: () => Promise<T | null>,
@@ -73,19 +79,55 @@ export class RequestPipeline implements HttpRequester, ExternalRequester {
 
   private fetchJson<T = Record<string, unknown>>(
     url: string,
-    init?: RequestInit,
-    gate?: RateLimitGate,
+    keys?: readonly string[],
   ): Promise<T | null> {
     return this.limiter.run(async () => {
-      for (let attempt = 0; attempt < FETCH_ATTEMPTS; attempt += 1) {
-        const outcome = await tryFetch<T>(url, init, gate);
-        if (outcome.done) {
-          return outcome.value;
-        }
+      if (keys === undefined) {
+        return retryLoop<T>(() => tryFetch<T>(url, undefined, undefined));
       }
-      return null;
+      return retryWithKeys<T>(url, keys, this.keyPool);
     });
   }
+}
+
+async function retryWithKeys<T>(
+  url: string,
+  keys: readonly string[],
+  pool: KeyPool,
+): Promise<T | null> {
+  let timeoutCount = 0;
+  for (let attempt = 0; attempt < FETCH_ATTEMPTS; attempt += 1) {
+    const entry = pool.select(keys);
+    if (entry === null) {
+      return null;
+    }
+    const init: RequestInit = { headers: { "API-Key": entry.key } };
+    const outcome = await tryFetch<T>(url, init, entry.gate);
+    if (outcome.done) {
+      return outcome.value;
+    }
+    if (outcome.gatePenalized) {
+      timeoutCount = 0;
+    } else {
+      timeoutCount += 1;
+      if (timeoutCount >= 2) {
+        return null;
+      }
+    }
+  }
+  return null;
+}
+
+async function retryLoop<T>(
+  attempt: () => Promise<FetchOutcome<T>>,
+): Promise<T | null> {
+  for (let i = 0; i < FETCH_ATTEMPTS; i += 1) {
+    const outcome = await attempt();
+    if (outcome.done) {
+      return outcome.value;
+    }
+  }
+  return null;
 }
 
 async function tryFetch<T>(
@@ -98,12 +140,10 @@ async function tryFetch<T>(
   }
   const res = await withDeadline(fetch(url, init));
   if (res === null) {
-    return { done: false };
+    return { done: false, gatePenalized: false };
   }
   if (res.status === 429) {
-    return (await shouldRetryAfterRateLimit(res, gate))
-      ? { done: false }
-      : { done: true, value: null };
+    return handleRateLimit<T>(res, gate);
   }
   if (!res.ok) {
     return { done: true, value: null };
@@ -112,19 +152,20 @@ async function tryFetch<T>(
     gate.update(res.headers);
   }
   const body = await withDeadline(res.json() as Promise<T>);
-  return body === null ? { done: false } : { done: true, value: body };
+  return body === null
+    ? { done: false, gatePenalized: false }
+    : { done: true, value: body };
 }
 
-// A per-player cooldown won't clear by retrying; a rate-limit will after its reset.
-async function shouldRetryAfterRateLimit(
+async function handleRateLimit<T>(
   res: Response,
   gate: RateLimitGate | undefined,
-): Promise<boolean> {
+): Promise<FetchOutcome<T>> {
   if (gate === undefined || (await isPlayerCooldown(res))) {
-    return false;
+    return { done: true, value: null };
   }
   gate.penalize(res.headers);
-  return true;
+  return { done: false, gatePenalized: true };
 }
 
 async function isPlayerCooldown(res: Response): Promise<boolean> {
@@ -138,7 +179,6 @@ async function isPlayerCooldown(res: Response): Promise<boolean> {
   }
 }
 
-// AbortController is ignored by the packaged runtime, so race a timer instead.
 async function withDeadline<T>(promise: Promise<T>): Promise<T | null> {
   const settled = await Promise.race([
     promise.then(

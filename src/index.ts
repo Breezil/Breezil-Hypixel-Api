@@ -13,6 +13,7 @@ export { SkyBlockEndpoints } from "./endpoints/skyblock-endpoints";
 export { HousingEndpoints } from "./endpoints/housing-endpoints";
 
 export type { Timestamped, BoosterState } from "./endpoints/envelope";
+export type { KeyDiagnostics } from "./http/key-pool";
 
 export type {
   HypixelApiConfig,
