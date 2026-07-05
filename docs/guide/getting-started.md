@@ -75,11 +75,11 @@ There is no `.env` file to wire up. Configuration is passed straight to the cons
 either as a bare key string, a static object, or a live source function that the client
 reads on every call (so a host can hot-apply key or TTL changes).
 
-| Option            | Required | Default | Description                                                         |
-| ----------------- | -------- | ------- | ------------------------------------------------------------------- |
-| `apiKey`          | yes      | none    | Your Hypixel API key. Without it, endpoint methods return `null`    |
-| `pingApiKey`      | no       | `""`    | Key for the external ping provider; only needed for `ping()`        |
-| `cacheTtlSeconds` | no       | `300`   | Cache lifetime in seconds. Sits above Hypixel's per-player cooldown |
+| Option            | Required | Default | Description                                                                                  |
+| ----------------- | -------- | ------- | -------------------------------------------------------------------------------------------- |
+| `apiKey`          | yes      | none    | Your Hypixel API key as a `string` or `string[]`. Without it, endpoint methods return `null` |
+| `pingApiKey`      | no       | `""`    | Key(s) for the external ping provider as a `string` or `string[]`; only needed for `ping()`  |
+| `cacheTtlSeconds` | no       | `300`   | Cache lifetime in seconds. Sits above Hypixel's per-player cooldown                          |
 
 ```ts
 import { HypixelClient } from "@breezil/hypixel-api";
@@ -100,7 +100,20 @@ const c = new HypixelClient(() => ({
   pingApiKey: currentPingKey,
   cacheTtlSeconds: 300,
 }));
+
+// 4. Multi-key: round-robin with per-key rate-limit tracking
+const d = new HypixelClient({
+  apiKey: ["KEY1", "KEY2", "KEY3"],
+  pingApiKey: ["PING-KEY1", "PING-KEY2"],
+});
 ```
+
+When you pass an array, requests round-robin across the keys. Each key gets its own
+rate-limit budget tracked independently from response headers. When one key is exhausted
+(HTTP 429), the pipeline automatically rotates to the next key on the next retry attempt,
+so a pool of N keys sustains roughly N times the single-key throughput. Per-player cooldowns
+always return `null` immediately regardless of how many keys are configured, because the
+cooldown is player-scoped, not key-scoped. Inspect per-key budget state with `client.keys()`.
 
 ### Injected identity layer
 
@@ -131,4 +144,3 @@ const hypixel = new HypixelClient("YOUR-API-KEY", resolver);
 - [API Overview](/api/) for the endpoint-to-method map
 - [Client &amp; Config](/api/client) for the pipeline behavior (cache, rate limit, retries)
 - [Computed Layer](/api/computed/) for every derived value and its formula
-

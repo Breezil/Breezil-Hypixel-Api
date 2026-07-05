@@ -169,11 +169,11 @@ There is no `.env` file to wire up. Configuration is passed straight to the cons
 either as a bare key string, a static object, or a live source function that the client
 reads on every call (so a host can hot-apply key or TTL changes).
 
-| Option            | Required | Default | Description                                                         |
-| ----------------- | -------- | ------- | ------------------------------------------------------------------- |
-| `apiKey`          | yes      | none    | Your Hypixel API key. Without it, endpoint methods return `null`    |
-| `pingApiKey`      | no       | `""`    | Key for the external ping provider; only needed for `ping()`        |
-| `cacheTtlSeconds` | no       | `300`   | Cache lifetime in seconds. Sits above Hypixel's per-player cooldown |
+| Option            | Required | Default | Description                                                                              |
+| ----------------- | -------- | ------- | ---------------------------------------------------------------------------------------- |
+| `apiKey`          | yes      | none    | Your Hypixel API key(s) as a string or array. Without it, endpoint methods return `null` |
+| `pingApiKey`      | no       | `""`    | Key(s) for the external ping provider as a string or array; only needed for `ping()`     |
+| `cacheTtlSeconds` | no       | `300`   | Cache lifetime in seconds. Sits above Hypixel's per-player cooldown                      |
 
 ```ts
 import { HypixelClient } from "@breezil/hypixel-api";
@@ -194,6 +194,12 @@ const c = new HypixelClient(() => ({
   pingApiKey: currentPingKey,
   cacheTtlSeconds: 300,
 }));
+
+// 4. Multi-key: round-robin with per-key rate-limit tracking
+const d = new HypixelClient({
+  apiKey: ["KEY1", "KEY2", "KEY3"],
+  pingApiKey: ["PING-KEY1", "PING-KEY2"],
+});
 ```
 
 The second argument injects the identity layer. Omit it for the built-in Mojang resolver
@@ -240,13 +246,14 @@ The client is a facade over six endpoint groups. All endpoint methods are `async
 
 ### Client
 
-| Member                                 | Description                                                    |
-| -------------------------------------- | -------------------------------------------------------------- |
-| `new HypixelClient(config, identity?)` | Construct with a key/object/source and optional identity layer |
-| `hasApiKey()`                          | Whether a key is configured                                    |
-| `ping(uuid)`                           | Average ping (ms) via the configured ping provider             |
-| `request<T>(endpoint)`                 | Escape hatch: any Hypixel v2 path, success-checked raw body    |
-| `clearCache()`                         | Drop the whole response cache                                  |
+| Member                                 | Description                                                               |
+| -------------------------------------- | ------------------------------------------------------------------------- |
+| `new HypixelClient(config, identity?)` | Construct with a key/object/source and optional identity layer            |
+| `hasApiKey()`                          | Whether at least one key is configured                                    |
+| `ping(uuid)`                           | Average ping (ms) via the configured ping provider                        |
+| `request<T>(endpoint)`                 | Escape hatch: any Hypixel v2 path, success-checked raw body               |
+| `keys()`                               | Per-key diagnostics: `remaining`, `limit`, `resetAt` for each Hypixel key |
+| `clearCache()`                         | Drop the whole response cache                                             |
 
 ### `hypixel.player`
 
@@ -364,4 +371,3 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for the full tex
 <div align="center">
 <sub>Built with 💙 by <a href="https://github.com/Breezil">Breezil</a>.</sub>
 </div>
-
