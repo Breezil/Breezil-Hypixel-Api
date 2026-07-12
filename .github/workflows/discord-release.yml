@@ -1,0 +1,176 @@
+name: Discord Release Announcement
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Send release announcement to Discord
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          RELEASE_ROLE_ID: ${{ vars.DISCORD_RELEASE_ROLE_ID }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+          RELEASE_URL: ${{ github.event.release.html_url }}
+          REPO_FULL: ${{ github.repository }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          python3 - <<'PY' || echo "::warning::Discord webhook request failed -- release is still live"
+          import json, os, subprocess
+          import urllib.error
+          import urllib.request
+
+          release_tag = os.environ['RELEASE_TAG']
+          release_body = os.environ['RELEASE_BODY']
+          release_url = os.environ['RELEASE_URL']
+          repo_full = os.environ['REPO_FULL']
+          repo_name = os.environ['REPO_NAME']
+
+          name_part = repo_name.replace('Breezil-', '')
+          display_name = 'Breezil ' + ' '.join(
+              w.capitalize() for w in name_part.split('-')
+          )
+          version = release_tag.lstrip('v')
+
+          body_text = release_body.strip()
+          sections_start = body_text.find('\n### ')
+          if sections_start != -1:
+              preamble = body_text[:sections_start].strip()
+              kept = []
+              for line in body_text[sections_start:].strip().split('\n'):
+                  head = line.strip()
+                  if head.startswith('### ') and head[4:].strip() in ('Install', 'Downloads'):
+                      break
+                  kept.append(line)
+              sections = '\n'.join(kept).strip()
+              content = preamble + '\n\n' + sections if preamble else sections
+          else:
+              content = body_text
+
+          result = subprocess.run(
+              ['git', 'tag', '--sort=-v:refname'],
+              capture_output=True, text=True
+          )
+          tags = [t.strip() for t in result.stdout.strip().split('\n')
+                  if t.strip() and t.strip() != release_tag]
+          prev_tag = tags[0] if tags else ''
+
+          buttons = [
+              {
+                  'type': 2, 'style': 5,
+                  'label': f'Full Patch Notes - v{version}',
+                  'emoji': {'name': 'link', 'id': '1519462025531621449'},
+                  'url': release_url,
+              }
+          ]
+          if prev_tag:
+              compare_url = (
+                  f'https://github.com/{repo_full}/compare/'
+                  f'{prev_tag}...{release_tag}'
+              )
+              buttons.append({
+                  'type': 2, 'style': 5,
+                  'label': f'Compare {prev_tag}...v{version}',
+                  'emoji': {'name': 'search', 'id': '1519461892442296451'},
+                  'url': compare_url,
+              })
+
+          title = (
+              f'## <:logs:1519462095153004726> Release: {display_name} v{version}'
+          )
+          role_id = os.environ.get('RELEASE_ROLE_ID', '').strip()
+          ping = f'-# <@&{role_id}>' if role_id else ''
+          cta = (
+              'For a complete list of changes, commits, and comparisons, check out '
+              'the full release on GitHub:'
+          )
+          footer = '-# Built with `💙` by Breezil'
+          MARGIN = 60
+
+          first_overhead = len(title) + len(ping) + 4
+          last_overhead = len(cta) + len(footer)
+
+          lines = content.split('\n')
+          pages = []
+          current = ''
+          for line in lines:
+              candidate = line if not current else current + '\n' + line
+              if len(candidate) > 4000 - first_overhead - last_overhead - MARGIN and current:
+                  pages.append(current)
+                  current = line
+              else:
+                  current = candidate
+          if current or not pages:
+              pages.append(current)
+
+          def build_message(body_text, is_first, is_last, part, total):
+              inner = []
+              if is_first:
+                  inner.append({'type': 10, 'content': title})
+                  inner.append({'type': 14, 'divider': True, 'spacing': 1})
+                  head = f'{ping}\n{body_text}' if ping else body_text
+              else:
+                  head = body_text
+              part_tag = '' if total == 1 else f' -# (part {part}/{total})'
+              inner.append({'type': 10, 'content': head + part_tag})
+              if is_last:
+                  inner.append({'type': 14, 'divider': True, 'spacing': 1})
+                  inner.append({'type': 10, 'content': cta})
+                  inner.append({'type': 1, 'components': buttons})
+                  inner.append({'type': 14, 'divider': True, 'spacing': 1})
+                  inner.append({'type': 10, 'content': footer})
+              return {
+                  'username': 'Breezil',
+                  'avatar_url': 'https://i.imgur.com/Mv8WfZO.png',
+                  'flags': 32768,
+                  'components': [{'type': 17, 'components': inner}],
+              }
+
+          total_pages = len(pages)
+          messages = [
+              build_message(p, i == 0, i == total_pages - 1, i + 1, total_pages)
+              for i, p in enumerate(pages)
+          ]
+
+          webhook_url = os.environ['WEBHOOK_URL']
+          sep = '&' if '?' in webhook_url else '?'
+          post_url = f'{webhook_url}{sep}with_components=true&wait=true'
+
+          def post(message):
+              data = json.dumps(message).encode('utf-8')
+              req = urllib.request.Request(
+                  post_url,
+                  data=data,
+                  headers={'Content-Type': 'application/json'},
+              )
+              try:
+                  with urllib.request.urlopen(req) as resp:
+                      return resp.status
+              except urllib.error.HTTPError as e:
+                  return e.code
+
+          ok = True
+          for i, message in enumerate(messages):
+              status = post(message)
+              if status in (200, 204):
+                  print(f'Posted part {i + 1}/{len(messages)} (HTTP {status})')
+              else:
+                  ok = False
+                  print(
+                      f'::warning::Discord webhook part {i + 1}/{len(messages)} '
+                      f'returned HTTP {status} -- release is still live'
+                  )
+          if ok:
+              print(f'Discord announcement posted in {len(messages)} message(s)')
+          PY
+
