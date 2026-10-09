@@ -1,6 +1,6 @@
 # NBT
 
-The NBT module decodes Hypixel's base64 + gzipped-NBT blobs (item bytes, inventory dumps, and similar payloads) into plain, readonly, fully-typed JavaScript. It exposes two parsers — `decodeNbt` for an arbitrary compound and `decodeItemBytes` for an inventory of items — plus the typed item shapes the latter produces. Decoding is strict-raw and fully synchronous: the blob is decoded from base64, gunzipped with `gunzipSync`, parsed as big-endian uncompressed NBT, and simplified into a plain object via `prismarine-nbt`'s `simplify`. Decoding never throws — any empty or invalid input degrades to `null` or `[]`. Item fields are read through the safe readers from the common module, so missing numbers become `0`, missing strings become `""`, and missing nested objects become empty objects.
+The NBT module decodes Hypixel's base64 + gzipped-NBT blobs (item bytes, inventory dumps, and similar payloads) into plain, readonly, fully-typed JavaScript. It exposes two parsers, `decodeNbt` for an arbitrary compound and `decodeItemBytes` for an inventory of items, plus the typed item shapes the latter produces. Decoding is strict-raw and fully synchronous: the blob is decoded from base64, gunzipped with `gunzipSync`, parsed as big-endian uncompressed NBT, and simplified into a plain object via `prismarine-nbt`'s `simplify`. Decoding never throws: any empty or invalid input degrades to `null` or `[]`. Item fields are read through the safe readers from the common module, so missing numbers become `0`, missing strings become `""`, and missing nested objects become empty objects.
 
 ## decodeNbt
 
@@ -118,7 +118,7 @@ interface NbtItemTag {
 
 ### NbtItem
 
-A single decoded inventory item — the per-slot object returned in the `decodeItemBytes` array.
+A single decoded inventory item: the per-slot object returned in the `decodeItemBytes` array.
 
 ```ts
 interface NbtItem {
@@ -147,3 +147,4 @@ interface NbtItem {
     - `enchantments: readonly NbtEnchantment[]`
     - `extraAttributes: NbtExtraAttributes`
     - `raw: NbtCompound`
+

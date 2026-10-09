@@ -34,7 +34,7 @@ features:
     details: Every endpoint returns a readonly, fully-typed object from @breezil/hypixel-parsers, re-exported here. Computed values never overwrite raw fields.
   - icon: 🔒
     title: TTL cache and single-flight
-    details: A built-in TTL cache, single-flight de-duplication, a 16-slot concurrency cap, and a header-driven rate-limit gate that queues instead of dropping.
+    details: A built-in TTL cache, single-flight de-duplication, a 16-slot concurrency cap (with a separate 4-slot cap for ping), and a header-driven rate-limit gate that queues instead of dropping.
   - icon: 🛡️
     title: Cooldown aware
     details: Distinguishes the per-player cooldown 429 from real rate limits, with a stall-proof per-attempt deadline that retries genuine stalls but never the cooldown.

@@ -434,14 +434,14 @@ interface TNTGamesWitherWizard
 
 | Wizard field | Interface               | Base/prestige/legacy prefix | Tier key        |
 | ------------ | ----------------------- | --------------------------- | --------------- |
-| `ancient`    | `TNTGamesAncientWizard` | `new_ancientwizard`         | —               |
-| `arcane`     | `TNTGamesArcaneWizard`  | `arcane_wizard`             | —               |
+| `ancient`    | `TNTGamesAncientWizard` | `new_ancientwizard`         | -               |
+| `arcane`     | `TNTGamesArcaneWizard`  | `arcane_wizard`             | -               |
 | `blood`      | `TNTGamesBloodWizard`   | `new_bloodwizard`           | `bloodwizard`   |
 | `fire`       | `TNTGamesFireWizard`    | `new_firewizard`            | `firewizard`    |
-| `hydro`      | `TNTGamesHydroWizard`   | `new_hydrowizard`           | —               |
+| `hydro`      | `TNTGamesHydroWizard`   | `new_hydrowizard`           | -               |
 | `ice`        | `TNTGamesIceWizard`     | `new_icewizard`             | `icewizard`     |
 | `kinetic`    | `TNTGamesKineticWizard` | `new_kineticwizard`         | `kineticwizard` |
-| `storm`      | `TNTGamesStormWizard`   | `new_stormwizard`           | —               |
+| `storm`      | `TNTGamesStormWizard`   | `new_stormwizard`           | -               |
 | `toxic`      | `TNTGamesToxicWizard`   | `new_toxicwizard`           | `toxicwizard`   |
 | `wither`     | `TNTGamesWitherWizard`  | `new_witherwizard`          | `witherwizard`  |
 
@@ -576,3 +576,4 @@ interface TNTGamesFavorites {
 ```
 
 `deathEffect` reads the raw `death_effect` array, keeping only string entries.
+

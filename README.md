@@ -77,7 +77,7 @@ rather call `hypixel.player.get("Notch")` than wire caching, cooldowns, and star
 - ⚡ Typed, subdomain-organised client: `player`, `guild`, `network`, `resources`, `skyblock`, and `housing` endpoint groups plus `ping`, `request`, and cache controls
 - 🧮 Always-on `.computed` enrichment on every endpoint with derivable values: network/BedWars/SkyWars/Pit/guild/SkyBlock levels and prestiges, all the community ratios, titles, per-game rates, oscillation-aware weekly/monthly picks, endpoint aggregates, and next-milestone counters
 - 🧩 Strict-raw parsed results from `@breezil/hypixel-parsers` (re-exported); raw fields stay untouched, computed values never overwrite them
-- 🔒 Built-in TTL cache, single-flight de-duplication, a 16-slot concurrency cap, and a header-driven rate-limit gate that queues requests instead of dropping them
+- 🔒 Built-in TTL cache, single-flight de-duplication, a 16-slot concurrency cap (with a separate 4-slot cap for ping), and a header-driven rate-limit gate that queues requests instead of dropping them
 - 🛡️ Distinguishes the per-player cooldown 429 from real rate limits, with a stall-proof per-attempt deadline that retries genuine stalls but never the cooldown
 - 🔌 Injected config (bare key, static object, or live source) and injected UUID resolver with pluggable persistence (in-memory LRU or JSON file, or bring your own store)
 - 🕒 Envelope metadata surfaced instead of dropped: `Timestamped` wrappers carry `lastUpdatedAt` where Hypixel sends it, and boosters include the feed's `boosterState`

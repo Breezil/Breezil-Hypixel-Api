@@ -30,7 +30,7 @@ Reads a boolean field from a raw object.
 function bool(obj: Record<string, unknown> | undefined, key: string): boolean;
 ```
 
-Returns `true` only when `obj[key]` is strictly equal to `true`. Returns `false` in every other case — `undefined` object, missing key, `false`, or any non-`true` value (including truthy non-booleans such as `1` or `"true"`).
+Returns `true` only when `obj[key]` is strictly equal to `true`. Returns `false` in every other case: `undefined` object, missing key, `false`, or any non-`true` value (including truthy non-booleans such as `1` or `"true"`).
 
 ## obj
 
@@ -57,3 +57,4 @@ function date(
 ```
 
 Returns `new Date(obj[key])` when `obj[key]` is a `number` greater than `0`. Returns `null` when `obj` is `undefined`, when `key` is missing, when the value is not a `number`, or when the value is `<= 0`.
+

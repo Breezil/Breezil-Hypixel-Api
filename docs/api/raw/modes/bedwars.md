@@ -47,6 +47,7 @@ interface BedWarsStats {
   readonly selectedUltimate: string;
   readonly activePrestigeScheme: string;
   readonly activeStar: string;
+  readonly activePrestigeBracket: string;
   readonly dataVersion: number;
   readonly pianistEnabled: boolean;
   readonly votedSnowman: boolean;
@@ -324,6 +325,8 @@ interface BedWarsSettings {
   readonly slumberItemNotification: string;
   readonly slumberWalletFull: boolean;
   readonly trapRemoval: boolean;
+  /** Whether a new prestige's scheme and star equip themselves when reached. */
+  readonly autoEquipPrestiges: boolean;
 }
 ```
 
@@ -607,15 +610,33 @@ Keys: `appetizer`, `firstCourse`, `oasis`, `slumber`.
 
 ### BedWarsDreamfeast
 
-A record of booleans keyed by dreamfeast unlock identifier.
+A record of booleans keyed by dreamfeast unlock identifier, plus the perks switched on right now.
 
 ```ts
 type BedWarsDreamfeast = Readonly<
   Record<keyof typeof BEDWARS_DREAMFEAST, boolean>
->;
+> & {
+  readonly toggles: Readonly<
+    Record<keyof typeof BEDWARS_DREAMFEAST_TOGGLES, boolean>
+  >;
+};
 ```
 
-Keys: `appetizerBoon`, `challengeWoolWarrior`, `dreamOfAnimals`, `dreamOfPrestigeStars`, `firstCourseBoon`, `firstDreamOfWoodSkins`, `firstNightmareOfChallenges`, `killmessagesGlorious`, `npcskinCluckStack`, `woodSkinAcaciaLog`, `woodSkinBirchLog`, `woodSkinDarkOakLog`, `woodSkinJungleLog`, `woodSkinOakLog`, `woodSkinSpruceLog`.
+Keys: `appetizerBoon`, `challengeAnchor`, `challengeBedsAndBloodlust`, `challengeBegAndBarter`, `challengeBlockRepellentBeds`, `challengeHalvedAndDoubled`, `challengeMidnight`, `challengeNoDreaming`, `challengeQuickMaths`, `challengeWoolWarrior`, `dessertBoon`, `dreamOfAnimals`, `dreamOfKillMessages`, `dreamOfPrestige`, `dreamOfPrestigeBrackets`, `dreamOfPrestigeFormatting`, `dreamOfPrestigeStars`, `firstCourseBoon`, `firstDreamOfShopkeeperSkins`, `firstDreamOfWoodSkins`, `firstNightmareOfChallenges`, `fourthCourseBoon`, `goldenStartingSword`, `killmessagesGlorious`, `killmessagesLucid`, `npcskinCluckStack`, `npcskinCowPyramid`, `secondCourseBoon`, `secondDreamOfShopkeeperSkins`, `secondDreamOfWoodSkins`, `secondNightmareOfChallenges`, `starFourPointed`, `starHollow`, `teamColorSelector`, `thirdCourseBoon`, `thirdNightmareOfChallenges`, `toggleBoldNumbers`, `toggleRainbowKillMessages`, `victorydanceChickenApocalypse`, `woodSkinAcaciaLog`, `woodSkinBirchLog`, `woodSkinDarkOakLog`, `woodSkinJungleLog`, `woodSkinOakLog`, `woodSkinSpruceLog`.
+
+`toggles` is read from `dreamfeast.toggles` and says what the player has switched on now; the matching unlock flag only says they have it. Keys: `boldNumbers`, `goldenStartingSword`, `rainbowKillMessages`.
+
+### Prestige Customizer
+
+What a player picked in the Prestige Customizer (Bed Wars 1.11) sits on `BedWarsStats` as cosmetic ids, passed through as-is:
+
+| Field                   | Raw key                   | Example                                        |
+| ----------------------- | ------------------------- | ---------------------------------------------- |
+| `activePrestigeScheme`  | `active_prestige_scheme`  | `prestige_scheme_drowned`                      |
+| `activeStar`            | `active_star`             | `star_four_pointed`                            |
+| `activePrestigeBracket` | `active_prestige_bracket` | `prestige_bracket_double_angle_quotation_mark` |
+
+Any of them may instead be `random_cosmetic` or `random_favorite_cosmetic`, which Hypixel rolls every game, or empty when never set. The Bold Numbers format is `dreamfeast.toggles.boldNumbers`. To render the tag, hand these to `bedWarsStarTag` from `@breezil/hypixel-utils`.
 
 ### BedWarsFeastfood
 

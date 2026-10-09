@@ -8,6 +8,7 @@ import { sleep } from "./sleep";
 
 const HYPIXEL_BASE_URL = "https://api.hypixel.net/v2";
 const MAX_CONCURRENT_REQUESTS = 16;
+const MAX_CONCURRENT_EXTERNAL_REQUESTS = 4;
 const MAX_CACHE_ENTRIES = 1000;
 const FETCH_ATTEMPTS = 4;
 const FETCH_TIMEOUT_MS = 5000;
@@ -19,6 +20,9 @@ type FetchOutcome<T> =
 export class RequestPipeline implements HttpRequester, ExternalRequester {
   private readonly cache: SingleFlightCache;
   private readonly limiter = new Semaphore(MAX_CONCURRENT_REQUESTS);
+  private readonly externalLimiter = new Semaphore(
+    MAX_CONCURRENT_EXTERNAL_REQUESTS,
+  );
   private readonly keyPool: KeyPool;
 
   constructor(
@@ -81,7 +85,8 @@ export class RequestPipeline implements HttpRequester, ExternalRequester {
     url: string,
     keys?: readonly string[],
   ): Promise<T | null> {
-    return this.limiter.run(async () => {
+    const limiter = keys === undefined ? this.externalLimiter : this.limiter;
+    return limiter.run(async () => {
       if (keys === undefined) {
         return retryLoop<T>(() => tryFetch<T>(url, undefined, undefined));
       }
@@ -189,4 +194,3 @@ async function withDeadline<T>(promise: Promise<T>): Promise<T | null> {
   ]);
   return settled.value;
 }
-
