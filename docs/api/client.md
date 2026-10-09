@@ -58,7 +58,7 @@ constructor(
 | `resolver` | `HypixelUuidResolver`   | `createMojangResolver()` | Name/UUID resolver used by all endpoint groups that accept `idOrName` and by `identity`. When omitted, a Mojang-backed in-memory resolver with no persistent store is created. |
 | `now`      | `() => number`          | `() => Date.now()`       | Clock injection for the request cache and rate-limit gate. Useful for tests.                                                                                                   |
 
-The constructor builds one shared `RequestPipeline` from the config source and hands it (plus the resolver, where applicable) to every endpoint group, so all groups share the same response cache, concurrency limiter, and rate-limit gate.
+The constructor builds one shared `RequestPipeline` from the config source and hands it (plus the resolver, where applicable) to every endpoint group, so all groups share the same response cache, concurrency limiters, and rate-limit gate.
 
 ### Endpoint group properties
 
@@ -165,7 +165,7 @@ Returns `true` when the current config source yields a non-empty (after `trim()`
 public ping(uuid: string): Promise<number | null>;
 ```
 
-Queries the external Bordic ping service (`https://bordic.xyz/api/v2/resources/ping`) for the player's average ping and returns it rounded to the nearest integer. Returns `null` when `pingApiKey` is empty (after `trim()`), the request fails, `success` is falsy, or the `data` array is missing or empty. Ping responses go through the same shared cache as Hypixel responses (cache key `ping:<uuid>`), but the request itself is not subject to the Hypixel rate-limit gate.
+Queries the external Bordic ping service (`https://bordic.xyz/api/v2/resources/ping`) for the player's average ping and returns it rounded to the nearest integer. Returns `null` when `pingApiKey` is empty (after `trim()`), the request fails, `success` is falsy, or the `data` array is missing or empty. Ping responses go through the same shared cache as Hypixel responses (cache key `ping:<uuid>`), but the request itself is not subject to the Hypixel rate-limit gate, and it runs under its own concurrency cap rather than Hypixel's (see [Request pipeline behavior](#request-pipeline-behavior)).
 
 ### request
 
@@ -212,7 +212,7 @@ Drops every entry from the shared response cache (Hypixel responses and ping res
 All requests made through the client share one pipeline with these fixed characteristics:
 
 - **Response cache**: single-flight LRU cache, at most **1000 entries**, TTL of `cacheTtlSeconds` (default **300 s**). Concurrent requests for the same endpoint share one in-flight fetch. `null` results are not cached, so failures are retried on the next call.
-- **Concurrency**: a semaphore caps in-flight HTTP requests at **16** across the whole client.
+- **Concurrency**: two separate semaphores, each shared across the whole client. Hypixel requests are capped at **16** in flight. Ping requests have their own cap of **4**: the ping service sits behind Cloudflare, which blocks an address that fires a whole lobby of lookups at once, and a separate cap means pings never wait behind queued Hypixel lookups.
 - **Rate-limit gate** (Hypixel requests only): each API key gets its own budget tracker from the `ratelimit-limit`, `ratelimit-remaining`, and `ratelimit-reset` response headers (with `x-` prefixed fallbacks). When multiple keys are configured, requests round-robin across them and each key's budget is tracked independently. When one key hits budget 0, its gate blocks until the reset time; the pipeline picks the next key automatically. Single-key configs behave exactly as before.
 - **Retries**: each fetch is attempted up to **4 times**. A per-attempt deadline of **5000 ms** applies to both the fetch and the body read. On HTTP 429, the key's gate is penalized (remaining set to 0, reset from `ratelimit-reset` or `retry-after`, else a 5000 ms default) and the next attempt picks the next key in rotation, except when the 429 body's `cause` contains "too recently" (a per-player cooldown), which returns `null` immediately without retrying. On timeout, the pipeline rotates to the next key; two consecutive timeouts return `null` (the issue is network-wide, not key-specific). Any other non-OK status returns `null` without retrying.
 
